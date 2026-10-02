@@ -4,24 +4,16 @@ st.title("Calculadora de Tarifas Flexibles - Centro de Entrenamiento")
 st.write("Cotizador basado en la densidad de entrenamiento (sesiones / semanas) y tarifas oficiales.")
 
 sesiones = st.number_input("Cantidad de sesiones", min_value=1, max_value=50, value=8, step=1)
-semanas = st.number_input("Límite de semanas de vigencia", min_value=1, max_value=52, value=4, step=1)
+semanas = st.number_input("Límite de semanas de vigencia", min_value=1, max_value=52, value=2, step=1)
 
 def calcular_tarifa_por_densidad(sesiones, semanas):
     # 1. Calcular la densidad real de consumo (sesiones por semana)
     densidad = sesiones / semanas
     
     # 2. Definir el precio por sesión proporcional según la densidad
-    # Tomamos como referencias los extremos del tarifario oficial:
-    # - Densidad de 1 vez/sem (o menor): S/ 45.00 por sesión (180 / 4)
-    # - Densidad de 2 veces/sem: S/ 37.50 por sesión (300 / 8)
-    # - Densidad de 3 veces/sem: S/ 31.67 por sesión (380 / 12)
-    # - Densidad de 4 veces/sem: S/ 28.75 por sesión (460 / 16)
-    # - Densidad de 5 veces/sem (o mayor): S/ 26.00 por sesión (520 / 20)
-    
     if densidad <= 1.0:
         precio_por_sesion = 45.00
     elif densidad <= 2.0:
-        # Interpolación lineal proporcional entre densidad 1.0 y 2.0
         proporcion = (densidad - 1.0) / (2.0 - 1.0)
         precio_por_sesion = 45.00 - proporcion * (45.00 - 37.50)
     elif densidad <= 3.0:
@@ -34,17 +26,18 @@ def calcular_tarifa_por_densidad(sesiones, semanas):
         proporcion = min(1.0, (densidad - 4.0) / (5.0 - 4.0))
         precio_por_sesion = 28.75 - proporcion * (28.75 - 26.00)
 
-    # 3. Excepción de control para respetar los paquetes oficiales exactos
-    if sesiones == 4 and semanas <= 5:
-        return 180.0, 45.00, densidad, "Tarifa Oficial Exacta (4 sesiones)"
-    elif sesiones == 8 and semanas <= 5:
-        return 300.0, 37.50, densidad, "Tarifa Oficial Exacta (8 sesiones)"
-    elif sesiones == 12 and semanas <= 6:
-        return 380.0, 31.67, densidad, "Tarifa Oficial Exacta (12 sesiones)"
+    # 3. Excepción de control solo cuando el tiempo de vigencia es el estándar (4 a 5/6 semanas)
+    # Si se hace en menos tiempo (ej. 2 semanas), pasa directamente al cálculo por densidad (express).
+    if sesiones == 4 and 4 <= semanas <= 5:
+        return 180.0, 45.00, densidad, "Tarifa Oficial Exacta (4 sesiones en su tiempo base)"
+    elif sesiones == 8 and 4 <= semanas <= 5:
+        return 300.0, 37.50, densidad, "Tarifa Oficial Exacta (8 sesiones en su tiempo base)"
+    elif sesiones == 12 and 4 <= semanas <= 6:
+        return 380.0, 31.67, densidad, "Tarifa Oficial Exacta (12 sesiones en su tiempo base)"
 
-    # 4. Cálculo final proporcional puro para cualquier otro caso
+    # 4. Cálculo final proporcional por densidad para formatos rápidos o cantidades libres
     precio_total = sesiones * precio_por_sesion
-    return precio_total, precio_por_sesion, densidad, "Tarifa Proporcional por Densidad"
+    return precio_total, precio_por_sesion, densidad, "Tarifa Proporcional por Densidad (Formato Express / Acelerado)"
 
 if st.button("Calcular Tarifa"):
     total, unitario, dens, detalle = calcular_tarifa_por_densidad(sesiones, semanas)
