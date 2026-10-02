@@ -11,12 +11,12 @@ def calcular_tarifa_por_densidad(sesiones, semanas):
     densidad = sesiones / semanas
     
     # 2. Definir el precio por sesión proporcional según la densidad
-    # Tomamos como referencias los extremos de tu tarifario oficial:
-    # - Densidad de 1 vez/sem (o menor): S/ 45.00 por sesión (180 / 4)[cite: 1]
-    # - Densidad de 2 veces/sem: S/ 37.50 por sesión (300 / 8)[cite: 1]
-    # - Densidad de 3 veces/sem: S/ 31.67 por sesión (380 / 12)[cite: 1]
-    # - Densidad de 4 veces/sem: S/ 28.75 por sesión (460 / 16)[cite: 1]
-    # - Densidad de 5 veces/sem (o mayor): S/ 26.00 por sesión (520 / 20)[cite: 1]
+    # Tomamos como referencias los extremos del tarifario oficial:
+    # - Densidad de 1 vez/sem (o menor): S/ 45.00 por sesión (180 / 4)
+    # - Densidad de 2 veces/sem: S/ 37.50 por sesión (300 / 8)
+    # - Densidad de 3 veces/sem: S/ 31.67 por sesión (380 / 12)
+    # - Densidad de 4 veces/sem: S/ 28.75 por sesión (460 / 16)
+    # - Densidad de 5 veces/sem (o mayor): S/ 26.00 por sesión (520 / 20)
     
     if densidad <= 1.0:
         precio_por_sesion = 45.00
@@ -34,13 +34,13 @@ def calcular_tarifa_por_densidad(sesiones, semanas):
         proporcion = min(1.0, (densidad - 4.0) / (5.0 - 4.0))
         precio_por_sesion = 28.75 - proporcion * (28.75 - 26.00)
 
-    # 3. Excepción de control para respetar los paquetes oficiales exactos (ej. 4 sesiones en 4-5 semanas = S/ 180, 8 sesiones en 4-5 sem = S/ 300)[cite: 1]
+    # 3. Excepción de control para respetar los paquetes oficiales exactos
     if sesiones == 4 and semanas <= 5:
-        return 180.0, 45.00, densidad, "Tarifa Oficial Exacta (4 sesiones)"[cite: 1]
+        return 180.0, 45.00, densidad, "Tarifa Oficial Exacta (4 sesiones)"
     elif sesiones == 8 and semanas <= 5:
-        return 300.0, 37.50, densidad, "Tarifa Oficial Exacta (8 sesiones)"[cite: 1]
+        return 300.0, 37.50, densidad, "Tarifa Oficial Exacta (8 sesiones)"
     elif sesiones == 12 and semanas <= 6:
-        return 380.0, 31.67, densidad, "Tarifa Oficial Exacta (12 sesiones)"[cite: 1]
+        return 380.0, 31.67, densidad, "Tarifa Oficial Exacta (12 sesiones)"
 
     # 4. Cálculo final proporcional puro para cualquier otro caso
     precio_total = sesiones * precio_por_sesion
