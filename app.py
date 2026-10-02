@@ -1,43 +1,59 @@
 import streamlit as st
 
 st.title("Calculadora de Tarifas Flexibles - Centro de Entrenamiento")
-st.write("Calcula el precio respetando el límite oficial de aplazamiento (hasta 5 semanas para 8 sesiones).")
+st.write("Cotizador basado en el tarifario oficial y proporciones por sesión con límites de aplazamiento.")
 
-sesiones = st.number_input("Cantidad de sesiones", min_value=1, max_value=50, value=8, step=1)
+sesiones = st.number_input("Cantidad de sesiones", min_value=1, max_value=50, value=4, step=1)
 semanas = st.number_input("Límite de semanas de vigencia", min_value=1, max_value=52, value=4, step=1)
 
-def calcular_tarifa_con_limite_exacto(sesiones, semanas):
-    # Definir los parámetros base según la tabla oficial
-    if sesiones <= 4:
-        precio_base_oficial = 180.0
-        semanas_max_toleradas = 5  # Hasta 5 semanas para 1 paquete de 4 sesiones
-    elif sesiones <= 8:
-        precio_base_oficial = 300.0
-        semanas_max_toleradas = 5  # Hasta 5 semanas para el paquete de 8 sesiones (2v/sem)
-    elif sesiones <= 12:
-        precio_base_oficial = 380.0
-        semanas_max_toleradas = 6  # Hasta 6 semanas para el paquete de 12 sesiones (3v/sem)
-    else:
-        precio_base_oficial = (520 / 20) * sesiones
-        semanas_max_toleradas = int(4 * (sesiones / 4) * 1.25)
+def calcular_tarifa_oficial_flexible(sesiones, semanas):
+    # 1. Definir los parámetros base oficiales de la imagen (4 semanas base + 1 semana de aplazamiento = 5 semanas máx)
+    # 1 vez/sem: 4 sesiones, 4-5 semanas = S/ 180 (S/ 45.00 por sesión)
+    # 2 veces/sem: 8 sesiones, 4-5 semanas = S/ 300 (S/ 37.50 por sesión)
+    # 3 veces/sem: 12 sesiones, 4-6 semanas = S/ 380 (S/ 31.67 por sesión)[cite: 1]
+    # 4 veces/sem: 16 sesiones, 4-6 semanas = S/ 460 (S/ 28.75 por sesión)[cite: 1]
+    # 5 veces/sem: 20 sesiones, 4-6 semanas = S/ 520 (S/ 26.00 por sesión)[cite: 1]
 
-    # Regla: Si está dentro de las semanas máximas toleradas con aplazamiento, mantiene el precio oficial
-    if semanas <= semanas_max_toleradas:
-        return precio_base_oficial, f"Tarifa Oficial (Incluye aplazamiento permitido de hasta {semanas_max_toleradas} semanas)"
+    # Determinamos el precio unitario de referencia según la densidad de sesiones por semana base (asumiendo 4 semanas de tiempo base)
+    densidad_base = sesiones / 4.0
     
+    if densidad_base <= 1.0:
+        precio_unitario = 180.0 / 4.0  # S/ 45.00[cite: 1]
+        semanas_max_toleradas = 5     # 4 a 5 semanas cuesta lo mismo (S/ 180)
+    elif densidad_base <= 2.0:
+        precio_unitario = 300.0 / 8.0  # S/ 37.50[cite: 1]
+        semanas_max_toleradas = 5     # 4 a 5 semanas cuesta lo mismo (S/ 300)[cite: 1]
+    elif densidad_base <= 3.0:
+        precio_unitario = 380.0 / 12.0 # S/ 31.67[cite: 1]
+        semanas_max_toleradas = 6     # Hasta 6 semanas mantiene el precio base
+    elif densidad_base <= 4.0:
+        precio_unitario = 460.0 / 16.0 # S/ 28.75[cite: 1]
+        semanas_max_toleradas = 6
     else:
-        # Si supera el límite de semanas permitidas (ej. 8 sesiones en 6 semanas), aplica recargo proporcional
-        densidad = sesiones / semanas
-        if densidad <= 1.0:
-            precio_por_sesion = 45.00
-        else:
-            precio_por_sesion = 37.50 * 1.15  # Se aplica un recargo por extender el tiempo más allá del aplazamiento
-            
-        precio_total = sesiones * precio_por_sesion
-        return precio_total, "Tarifa con Recargo por Exceso de Vigencia (Supera el aplazamiento de 5 semanas)"
+        precio_unitario = 520.0 / 20.0 # S/ 26.00[cite: 1]
+        semanas_max_toleradas = 6
+
+    # 2. Regla de aplazamiento oficial (Si está dentro del tiempo base o el aplazamiento permitido, respeta el precio exacto del paquete)
+    if semanas <= semanas_max_toleradas:
+        if sesiones <= 4:
+            return 180.0, "Tarifa Oficial Exacta (Respeta precio base de 4-5 semanas)"[cite: 1]
+        elif sesiones <= 8:
+            return 300.0, "Tarifa Oficial Exacta (Respeta precio base de 4-5 semanas)"[cite: 1]
+        elif sesiones <= 12:
+            return 380.0, "Tarifa Oficial Exacta (Respeta precio base de 4-6 semanas)"[cite: 1]
+
+    # 3. Si excede las semanas de aplazamiento o es una cantidad totalmente proporcional fuera de los paquetes cerrados:
+    precio_total = sesiones * precio_unitario
+    
+    if semanas > semanas_max_toleradas:
+        # Aplicamos un recargo proporcional por extensión de vigencia
+        precio_total = precio_total * 1.10
+        return precio_total, f"Tarifa Proporcional con Recargo por Exceder el Aplazamiento de {semanas_max_toleradas} semanas"
+    
+    return precio_total, "Tarifa Proporcional Directa por Sesión"
 
 if st.button("Calcular Tarifa"):
-    total, detalle = calcular_tarifa_con_limite_exacto(sesiones, semanas)
+    total, detalle = calcular_tarifa_oficial_flexible(sesiones, semanas)
     
     st.success(f"### Precio Total: S/ {total:,.2f}")
     st.info(f"**Detalle:** {detalle}")
